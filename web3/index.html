@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yatra Express — Bus Reservation</title>
+<style>
+  :root{
+    --night: #0b1830;
+    --night-2: #132345;
+    --amber: #f5a623;
+    --amber-dim: #c9821c;
+    --paper: #f6f1e4;
+    --paper-line: #d9cfae;
+    --ink: #1c1508;
+    --muted: #8a93a8;
+    --seat-free: #eef1f7;
+    --seat-hover: #cfe8d8;
+    --seat-selected: #2f9e5c;
+    --seat-taken: #4b5468;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--night);
+    color: var(--paper);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height:100vh;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    padding: 26px 6vw 60px;
+    background:
+      radial-gradient(600px 300px at 15% -10%, rgba(245,166,35,0.18), transparent 60%),
+      linear-gradient(180deg, var(--night), var(--night-2));
+    position: relative;
+    overflow: hidden;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-family: 'Courier New', monospace;
+  }
+  .brand .mark{
+    width:34px; height:34px;
+    background: var(--amber);
+    border-radius: 6px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:900; color: var(--night);
+    font-size: 18px;
+  }
+  .brand .name{
+    font-size: 20px;
+    letter-spacing: 3px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .brand .name span{ color: var(--amber); }
+
+  .hero-headline{
+    margin: 50px 0 8px;
+    font-size: clamp(30px, 5vw, 52px);
+    font-weight: 800;
+    max-width: 780px;
+    line-height: 1.05;
+    letter-spacing: -0.5px;
+  }
+  .hero-sub{
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.6;
+    margin-bottom: 34px;
+  }
+
+  .highway{
+    position:absolute;
+    bottom: 0; left:0; right:0;
+    height: 3px;
+    background-image: repeating-linear-gradient(90deg, var(--amber) 0 26px, transparent 26px 46px);
+    opacity:.55;
+  }
+
+  /* ---------- Search card ---------- */
+  .search-card{
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 22px;
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+    position: relative;
+    z-index: 2;
+  }
+  @media (max-width: 800px){
+    .search-card{ grid-template-columns: 1fr 1fr; }
+  }
+
+  .field label{
+    display:block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--amber-dim);
+    font-weight:700;
+    margin-bottom: 6px;
+  }
+  .field select, .field input{
+    width:100%;
+    padding: 10px 8px;
+    border: none;
+    border-bottom: 2px solid var(--paper-line);
+    background: transparent;
+    font-size: 15px;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .field select:focus, .field input:focus{
+    outline:none;
+    border-bottom-color: var(--amber-dim);
+  }
+
+  .search-btn{
+    align-self:end;
+    background: var(--night);
+    color: var(--amber);
+    border:none;
+    padding: 12px 26px;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor:pointer;
+    transition: transform .15s ease, background .2s ease;
+  }
+  .search-btn:hover{ background: #1a2c52; transform: translateY(-2px); }
+  .search-btn:focus-visible{ outline: 3px solid var(--amber); outline-offset:2px; }
+
+  /* ---------- Main ---------- */
+  main{ padding: 40px 6vw 80px; max-width: 1100px; margin:0 auto; }
+
+  .section-label{
+    font-family:'Courier New', monospace;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 14px;
+  }
+
+  /* ---------- Bus results ---------- */
+  .bus-list{ display:flex; flex-direction:column; gap:14px; margin-bottom: 46px; }
+
+  .bus-card{
+    background: var(--night-2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display:grid;
+    grid-template-columns: 1.4fr 1fr 1fr auto;
+    align-items:center;
+    gap: 14px;
+    cursor:pointer;
+    transition: border-color .2s ease, transform .15s ease;
+  }
+  .bus-card:hover{ border-color: var(--amber-dim); transform: translateX(4px); }
+  .bus-card.selected{ border-color: var(--amber); background:#1a2c52; }
+
+  @media (max-width: 760px){
+    .bus-card{ grid-template-columns: 1fr 1fr; }
+  }
+
+  .bus-name{ font-weight:700; }
+  .bus-type{ font-size:12px; color: var(--muted); }
+  .bus-time{ font-family:'Courier New', monospace; font-size:15px; }
+  .bus-time small{ display:block; color: var(--muted); font-size: 10px; letter-spacing:1px; }
+  .bus-fare{ font-weight:800; color: var(--amber); font-size: 18px; text-align:right; }
+  .bus-fare small{ display:block; color: var(--muted); font-weight:400; font-size:11px; text-align:right; }
+
+  /* ---------- Seat map ---------- */
+  #seatSection{ display:none; }
+
+  .seat-wrap{
+    background: var(--night-2);
+    border-radius: 14px;
+    padding: 26px;
+    display:grid;
+    grid-template-columns: 1fr 260px;
+    gap: 30px;
+  }
+  @media (max-width: 760px){ .seat-wrap{ grid-template-columns: 1fr; } }
+
+  .bus-shell{
+    background: #0e1a34;
+    border-radius: 18px 18px 8px 8px;
+    padding: 20px 24px 26px;
+    position: relative;
+  }
+  .driver-row{
+    display:flex; justify-content:flex-end; margin-bottom: 18px;
+  }
+  .steering{
+    width: 30px; height:30px; border-radius:50%;
+    border: 3px solid var(--muted);
+    position:relative;
+  }
+  .steering::after{
+    content:''; position:absolute; inset:8px; border-radius:50%; background: var(--muted);
+  }
+
+  .seat-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 34px) 26px repeat(2, 34px);
+    gap: 10px;
+    justify-content:center;
+  }
+
+  .seat{
+    width:34px; height:34px;
+    border-radius: 8px 8px 4px 4px;
+    background: var(--seat-free);
+    border: none;
+    cursor:pointer;
+    font-family:'Courier New', monospace;
+    font-size: 10px;
+    color: #445;
+    display:flex; align-items:center; justify-content:center;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .seat:hover:not(.taken):not(.selected){ background: var(--seat-hover); transform: scale(1.06); }
+  .seat.taken{ background: var(--seat-taken); color: #aab; cursor: not-allowed; }
+  .seat.selected{ background: var(--seat-selected); color: white; }
+  .seat.aisle-gap{ background: transparent; cursor: default; }
+
+  .legend{ display:flex; gap:18px; margin-top:22px; font-size:12px; color: var(--muted); flex-wrap:wrap; }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:14px; height:14px; border-radius:4px; display:inline-block; }
+  .legend .i-free{ background: var(--seat-free); }
+  .legend .i-sel{ background: var(--seat-selected); }
+  .legend .i-taken{ background: var(--seat-taken); }
+
+  /* ---------- Ticket stub ---------- */
+  .ticket{
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    font-family: 'Courier New', monospace;
+    align-self:start;
+  }
+  .ticket::before, .ticket::after{
+    content:'';
+    position:absolute;
+    width:20px; height:20px;
+    background: var(--night-2);
+    border-radius:50%;
+    top: 90px;
+  }
+  .ticket::before{ left:-10px; }
+  .ticket::after{ right:-10px; }
+
+  .ticket h4{
+    margin: 0 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    border-bottom: 1px dashed var(--paper-line);
+    padding-bottom: 10px;
+  }
+  .ticket-row{
+    display:flex; justify-content:space-between;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .ticket-row b{ text-align:right; }
+  .ticket-total{
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--paper-line);
+    display:flex; justify-content:space-between;
+    font-size: 16px;
+    font-weight:800;
+  }
+  .confirm-btn{
+    margin-top: 16px;
+    width:100%;
+    background: var(--night);
+    color: var(--amber);
+    border:none;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight:700;
+    letter-spacing: 1px;
+    cursor:pointer;
+  }
+  .confirm-btn:disabled{ background:#3a415a; color:#8a93a8; cursor:not-allowed; }
+  .confirm-btn:not(:disabled):hover{ background:#1a2c52; }
+
+  .toast{
+    position: fixed;
+    bottom: 24px; left:50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--seat-selected);
+    color:white;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-weight:600;
+    opacity:0;
+    transition: opacity .3s ease, transform .3s ease;
+    pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="mark">Y</div>
+    <div class="name">Yatra <span>Express</span></div>
+  </div>
+
+  <h1 class="hero-headline">Book your seat before the driver does.</h1>
+  <p class="hero-sub">Real routes, real seat maps, zero counter queues. Pick a route, choose your seat, get your ticket stub — all before your chai gets cold.</p>
+
+  <div class="search-card">
+    <div class="field">
+      <label for="from">From</label>
+      <select id="from">
+        <option>Chennai</option>
+        <option>Coimbatore</option>
+        <option>Madurai</option>
+        <option>Trichy</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="to">To</label>
+      <select id="to">
+        <option>Bengaluru</option>
+        <option>Madurai</option>
+        <option>Coimbatore</option>
+        <option>Pondicherry</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="date">Date of travel</label>
+      <input type="date" id="date">
+    </div>
+    <button class="search-btn" onclick="showResults()">Search Buses</button>
+  </div>
+
+  <div class="highway"></div>
+</header>
+
+<main>
+
+  <div id="resultsSection">
+    <div class="section-label">// Available buses</div>
+    <div class="bus-list" id="busList"></div>
+  </div>
+
+  <div id="seatSection">
+    <div class="section-label">// Choose your seat</div>
+    <div class="seat-wrap">
+      <div class="bus-shell">
+        <div class="driver-row"><div class="steering"></div></div>
+        <div class="seat-grid" id="seatGrid"></div>
+        <div class="legend">
+          <span><i class="i-free"></i> Available</span>
+          <span><i class="i-sel"></i> Selected</span>
+          <span><i class="i-taken"></i> Booked</span>
+        </div>
+      </div>
+
+      <div class="ticket">
+        <h4>Ticket summary</h4>
+        <div class="ticket-row"><span>Route</span><b id="tRoute">—</b></div>
+        <div class="ticket-row"><span>Bus</span><b id="tBus">—</b></div>
+        <div class="ticket-row"><span>Date</span><b id="tDate">—</b></div>
+        <div class="ticket-row"><span>Seats</span><b id="tSeats">None</b></div>
+        <div class="ticket-total"><span>Total</span><span id="tTotal">₹0</span></div>
+        <button class="confirm-btn" id="confirmBtn" disabled onclick="confirmBooking()">Confirm booking</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast">Booking confirmed. Safe travels!</div>
+
+<script>
+  const buses = [
+    { name: "Yatra Volvo A/C", type: "Sleeper · 2+1", dep: "22:30", arr: "06:15", fare: 950 },
+    { name: "Southern Star", type: "Seater · 2+2", dep: "23:00", arr: "07:00", fare: 620 },
+    { name: "Highway King", type: "Sleeper · 2+1", dep: "21:45", arr: "05:30", fare: 880 },
+    { name: "Metro Link Express", type: "Seater · 2+3", dep: "23:45", arr: "07:45", fare: 540 },
+  ];
+
+  const takenSeats = ["A2", "A5", "B1", "C4", "D3"];
+  let selectedSeats = [];
+  let currentBus = null;
+
+  function showResults(){
+    const from = document.getElementById('from').value;
+    const to = document.getElementById('to').value;
+    const list = document.getElementById('busList');
+    list.innerHTML = '';
+
+    buses.forEach((bus, i) => {
+      const card = document.createElement('div');
+      card.className = 'bus-card';
+      card.innerHTML = `
+        <div>
+          <div class="bus-name">${bus.name}</div>
+          <div class="bus-type">${bus.type}</div>
+        </div>
+        <div class="bus-time">${bus.dep}<small>${from}</small></div>
+        <div class="bus-time">${bus.arr}<small>${to}</small></div>
+        <div class="bus-fare">₹${bus.fare}<small>per seat</small></div>
+      `;
+      card.onclick = () => selectBus(i, card, from, to);
+      list.appendChild(card);
+    });
+
+    document.getElementById('resultsSection').scrollIntoView({behavior:'smooth',
