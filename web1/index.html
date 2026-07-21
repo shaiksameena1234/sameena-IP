@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CSS Animation Basics</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 30px;
+  }
+
+  h1 {
+    text-align: center;
+    color: #38bdf8;
+  }
+
+  .intro {
+    max-width: 700px;
+    margin: 0 auto 40px;
+    text-align: center;
+    color: #94a3b8;
+    line-height: 1.6;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #334155;
+  }
+
+  .card h3 {
+    margin-top: 0;
+    color: #f8fafc;
+  }
+
+  .card p {
+    font-size: 13px;
+    color: #94a3b8;
+  }
+
+  .stage {
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  code {
+    background: #0f172a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fbbf24;
+    font-size: 12px;
+  }
+
+  /* ---------- 1. Basic keyframe animation (moves + changes color) ---------- */
+  .box1 {
+    width: 50px;
+    height: 50px;
+    background: #38bdf8;
+    border-radius: 8px;
+    animation: moveColor 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes moveColor {
+    0%   { transform: translateX(-80px); background: #38bdf8; }
+    50%  { background: #a78bfa; }
+    100% { transform: translateX(80px); background: #f472b6; }
+  }
+
+  /* ---------- 2. Rotating loader ---------- */
+  .box2 {
+    width: 50px;
+    height: 50px;
+    border: 6px solid #334155;
+    border-top-color: #34d399;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  /* ---------- 3. Pulse / scale ---------- */
+  .box3 {
+    width: 50px;
+    height: 50px;
+    background: #f87171;
+    border-radius: 50%;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.4); opacity: 0.6; }
+  }
+
+  /* ---------- 4. Bounce ---------- */
+  .box4 {
+    width: 50px;
+    height: 50px;
+    background: #fbbf24;
+    border-radius: 8px;
+    animation: bounce 1s cubic-bezier(.28,.84,.42,1) infinite;
+  }
+
+  @keyframes bounce {
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-40px); }
+    100% { transform: translateY(0); }
+  }
+
+  /* ---------- 5. Fade in on hover (transition, not keyframes) ---------- */
+  .box5 {
+    width: 50px;
+    height: 50px;
+    background: #34d399;
+    border-radius: 8px;
+    opacity: 0.25;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .card:hover .box5 {
+    opacity: 1;
+    transform: rotate(180deg);
+  }
+
+  /* ---------- 6. Sliding text / marquee ---------- */
+  .box6-track {
+    position: absolute;
+    white-space: nowrap;
+    animation: slide 4s linear infinite;
+    font-weight: bold;
+    color: #a78bfa;
+  }
+
+  @keyframes slide {
+    from { left: 100%; }
+    to   { left: -100%; }
+  }
+</style>
+</head>
+<body>
+
+  <h1>CSS Animation Basics</h1>
+  <p class="intro">
+    Every animation here uses the same recipe: define a
+    <code>@keyframes</code> block describing the states, then attach it
+    to an element with the <code>animation</code> shorthand
+    (duration, timing-function, iteration-count, direction). The last
+    card shows <code>transition</code> instead, which is simpler and
+    only needs a trigger like <code>:hover</code>.
+  </p>
+
+  <div class="grid">
+
+    <div class="card">
+      <h3>1. Move + Color change</h3>
+      <div class="stage"><div class="box1"></div></div>
+      <p><code>animation: moveColor 2s ease-in-out infinite alternate;</code></p>
+    </div>
+
+    <div class="card">
+      <h3>2. Spinner / Loader</h3>
+      <div class="stage"><div class="box2"></div></div>
+      <p><code>animation: spin 1s linear infinite;</code></p>
+    </div>
+
+    <div class="card">
+      <h3>3. Pulse</h3>
+      <div class="stage"><div class="box3"></div></div>
+      <p><code>animation: pulse 1.2s ease-in-out infinite;</code></p>
+    </div>
+
+    <div class="card">
+      <h3>4. Bounce</h3>
+      <div class="stage"><div class="box4"></div></div>
+      <p><code>animation: bounce 1s cubic-bezier(...) infinite;</code></p>
+    </div>
+
+    <div class="card">
+      <h3>5. Hover transition (hover me)</h3>
+      <div class="stage"><div class="box5"></div></div>
+      <p><code>transition: opacity 0.5s, transform 0.5s;</code> on <code>:hover</code></p>
+    </div>
+
+    <div class="card">
+      <h3>6. Sliding text</h3>
+      <div class="stage"><div class="box6-track">Hello, I'm sliding! →</div></div>
+      <p><code>animation: slide 4s linear infinite;</code></p>
+    </div>
+
+  </div>
+
+</body>
+</html>
